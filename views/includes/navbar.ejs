@@ -1,0 +1,112 @@
+<style>
+  .search-bar {
+    height: 3.5rem;
+    border: none;
+    border-radius: 70px;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px 0px;
+  }
+
+  .search-btn {
+    background-color: #fe424d;
+    color: #fff;
+    border-radius: 25px;
+    padding: 0 1rem 0 1rem;
+  }
+
+  .search-btn:hover {
+    background-color: #fe424d;
+    color: #fff;
+  }
+
+  .search-btn i {
+    display: inline;
+    margin-right: 0.5rem;
+  }
+
+  .search-inp {
+    border-radius: 25px;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .price-inp {
+    width: 110px;
+    border-radius: 25px;
+    padding: 0.4rem 0.8rem;
+    margin-left: 0.5rem;
+  }
+
+  
+</style>
+
+<nav class="navbar navbar-expand-md bg-body-light border-bottom sticky-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/listings">
+      <i class="fa-regular fa-compass"></i>
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNavAltMarkup"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-link" href="/listings">Explore</a>
+      </div>
+
+      <!-- 🔍 Search Form -->
+      <div class="navbar-nav mx-auto">
+        <div class="form-control search-bar">
+          <form
+            class="d-flex"
+            role="search"
+            action="/listings/search"
+            method="GET"
+          >
+            <input
+              class="form-control me-2 search-inp"
+              type="search"
+              name="q"
+              placeholder="Search destination"
+              value="<%= typeof query !== 'undefined' ? query : '' %>"
+            />
+
+            <button class="btn search-btn" type="submit">
+              <i class="fa-solid fa-magnifying-glass"></i>Search
+            </button>
+
+            <input
+              class="form-control price-inp"
+              type="number"
+              name="minPrice"
+              placeholder="Min Price"
+              value="<%= typeof minPrice !== 'undefined' ? minPrice : '' %>"
+            />
+            <input
+              class="form-control price-inp"
+              type="number"
+              name="maxPrice"
+              placeholder="Max Price"
+              value="<%= typeof maxPrice !== 'undefined' ? maxPrice : '' %>"
+            />
+          </form>
+        </div>
+      </div>
+
+      <div class="navbar-nav ms-auto">
+        <a class="nav-link" href="/listings/new"><b>Add your listings</b></a>
+        <% if(!currUser) { %>
+          <a class="nav-link" href="/signup"><b>Sign up</b></a>
+          <a class="nav-link" href="/login"><b>Log in</b></a>
+        <% } %> <% if(currUser) { %>
+        <a class="nav-link" href="/logout"><b>Log out</b></a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</nav>
