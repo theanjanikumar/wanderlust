@@ -1,15 +1,9 @@
 require("dotenv").config();
 
-// if (process.env.NODE_ENV != "production") {
-//   require("dotenv").config();
-// }
-
-// console.log(process.env.SCERET);
-
-const express = require("express"); /* Import dependencies */
-const app = express(); /* Initialize Express app */
-const mongoose = require("mongoose"); /* Import dependencies */
-const path = require("path"); /* handling file paths. */
+const express = require("express");
+const app = express();
+const mongoose = require("mongoose");
+const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
@@ -20,64 +14,42 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
 
+// ROUTES
 const listingRouter = require("./routes/listings.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 
-// Set up MongoDB connection string
-// const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+// ======================
+// DATABASE
+// ======================
 const dbUrl = process.env.MONGO_URL;
 
-// Connect to MongoDB using Mongoose
-main()
+mongoose
+  .connect(dbUrl)
   .then(() => {
     console.log("connect to DB");
   })
   .catch((err) => {
-    console.log(err);
+    console.log("DB ERROR:", err);
   });
 
-async function main() {
-  // await mongoose.connect(MONGO_URL);
-  await mongoose.connect(dbUrl);
-}
-
-app.set("view engine", "ejs"); /* Use EJS for rendering. */
-app.set(
-  "views",
-  path.join(__dirname, "views")
-); /* Find EJS files inside the views folder. */
-app.use(
-  express.urlencoded({ extended: true })
-); /* This tells Express to parse form data (like listing[title]) into req.body. */
-app.use(methodOverride("_method"));
+// ======================
+// VIEW ENGINE
+// ======================
 app.engine("ejs", ejsMate);
-app.use(express.static(path.join(__dirname, "/public")));
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
-// const store = MongoStore.create({
-//   mongoUrl: dbUrl,
-//   crypto: {
-//     secret: process.env.SECRET,
-//   },
-//   touchAfter: 24 * 3600,
-// });
+// ======================
+// MIDDLEWARE
+// ======================
+app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride("_method"));
+app.use(express.static(path.join(__dirname, "public")));
 
-// store.on("error", () => {
-//   console.log("ERROR in MONGO SESSION STORE");
-// });
-
-// const sessionOptions = {
-//   store,
-//   secret: process.env.SECRET,
-//   resave: false,
-//   saveUninitialized: true,
-//   cookie: {
-//     expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-//     maxAge: 7 * 24 * 60 * 60 * 1000,
-//     httpOnly: true,
-//   },
-// };
-
+// ======================
+// SESSION STORE
+// ======================
 const store = MongoStore.create({
   mongoUrl: dbUrl,
   touchAfter: 24 * 3600,
@@ -100,22 +72,22 @@ const sessionOptions = {
   },
 };
 
-
-// Set up a simple route
-// app.get("/", (req, res) => {
-//   res.send("Hi, i am root");
-// });
-
+app.set("trust proxy", 1);
 app.use(session(sessionOptions));
 app.use(flash());
 
+// ======================
+// PASSPORT
+// ======================
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
-
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+// ======================
+// GLOBAL TEMPLATE VARS
+// ======================
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
@@ -123,36 +95,38 @@ app.use((req, res, next) => {
   next();
 });
 
-// app.get("/demouser", async (req, res, next) => {
-//   let fakeUser = new User({
-//     email: "student@gmail.com",
-//     username: "delta-student",
-//   });
-//   let registeredUser = await User.register(fakeUser, "helloworld");
-//   res.send(registeredUser);
-// });
+// ======================
+// ROOT ROUTE (FIXED)
+// ======================
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 
+// ======================
+// ROUTES
+// ======================
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/", userRouter);
 
-// "*" this route is not work in globally express version 5 use {*splat}
-
-app.all("{*splat}", (req, res, next) => {
-  next(new ExpressError(404, "Page Not Found!"));
+// ======================
+// 404 HANDLER
+// ======================
+app.all("*", (req, res, next) => {
+  next(new ExpressError(404, "Page Not Found"));
 });
 
+// ======================
+// ERROR HANDLER
+// ======================
 app.use((err, req, res, next) => {
-  let { statusCode = 500, message = "something went wrong" } = err;
+  const { statusCode = 500, message = "Something went wrong" } = err;
   res.status(statusCode).render("error.ejs", { message });
-  // res.status(statusCode).send(message);
 });
 
-// Start the server
-// app.listen(8080, () => {
-//   console.log("server is listening on port 8080");
-// });
-
+// ======================
+// SERVER
+// ======================
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`server is listening on port ${PORT}`);
