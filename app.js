@@ -1,6 +1,8 @@
-if (process.env.NODE_ENV != "production") {
-  require("dotenv").config();
-}
+require("dotenv").config();
+
+// if (process.env.NODE_ENV != "production") {
+//   require("dotenv").config();
+// }
 
 // console.log(process.env.SCERET);
 
@@ -24,7 +26,7 @@ const userRouter = require("./routes/user.js");
 
 // Set up MongoDB connection string
 // const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-const dbUrl = process.env.ATLASDB_URL;
+const dbUrl = process.env.MONGO_URL;
 
 // Connect to MongoDB using Mongoose
 main()
@@ -52,29 +54,52 @@ app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
 
+// const store = MongoStore.create({
+//   mongoUrl: dbUrl,
+//   crypto: {
+//     secret: process.env.SECRET,
+//   },
+//   touchAfter: 24 * 3600,
+// });
+
+// store.on("error", () => {
+//   console.log("ERROR in MONGO SESSION STORE");
+// });
+
+// const sessionOptions = {
+//   store,
+//   secret: process.env.SECRET,
+//   resave: false,
+//   saveUninitialized: true,
+//   cookie: {
+//     expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+//     maxAge: 7 * 24 * 60 * 60 * 1000,
+//     httpOnly: true,
+//   },
+// };
+
 const store = MongoStore.create({
   mongoUrl: dbUrl,
-  crypto: {
-    secret: process.env.SECRET,
-  },
   touchAfter: 24 * 3600,
 });
 
-store.on("error", () => {
-  console.log("ERROR in MONGO SESSION STORE");
+store.on("error", function (e) {
+  console.log("SESSION STORE ERROR", e);
 });
 
 const sessionOptions = {
   store,
-  secret: process.env.SECRET,
+  name: "session",
+  secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
-    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
+    expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+    maxAge: 1000 * 60 * 60 * 24 * 7,
   },
 };
+
 
 // Set up a simple route
 // app.get("/", (req, res) => {
@@ -124,6 +149,11 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-app.listen(8080, () => {
-  console.log("server is listening on port 8080");
+// app.listen(8080, () => {
+//   console.log("server is listening on port 8080");
+// });
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`server is listening on port ${PORT}`);
 });
